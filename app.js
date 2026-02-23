@@ -9,6 +9,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebarList = document.getElementById('activitiesList');
     const downloadAllBtn = document.getElementById('downloadAllBtn');
 
+    // Quill Editors Initialization
+    const editors = {};
+    const quillOptions = {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                ['bold', 'italic', 'underline'],
+                [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                ['clean']
+            ]
+        }
+    };
+
+    ['consigna', 'objectives', 'guidelines', 'criteria'].forEach(id => {
+        const container = document.getElementById(id + 'Editor');
+        if (container) {
+            editors[id] = new Quill(container, quillOptions);
+        }
+    });
+
+    function getEditorHtml(id) {
+        return editors[id] ? editors[id].root.innerHTML : '';
+    }
+
+    function setEditorHtml(id, html) {
+        if (editors[id]) {
+            editors[id].root.innerHTML = html || '';
+        }
+    }
+
     // Toggle Group Instructions display dynamically
     isGroupCheckbox.addEventListener('change', (e) => {
         if (e.target.checked) {
@@ -35,8 +65,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Labels for dynamic form changing
     const guidelinesLabel = document.getElementById('guidelinesLabel');
     const criteriaLabel = document.getElementById('criteriaLabel');
-    const guidelinesInput = document.getElementById('guidelines');
-    const criteriaInput = document.getElementById('criteria');
 
     const catSelect = document.getElementById('category');
     const modInput = document.getElementById('module');
@@ -88,46 +116,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Auto-list formatter for specific text areas
-    const addAutoListListener = (id) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-
-        el.addEventListener('focus', () => {
-            if (el.value.trim() === '') {
-                el.value = '1. ';
-            }
-        });
-
-        el.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                const lines = el.value.substring(0, el.selectionStart).split('\n');
-                const lastLine = lines[lines.length - 1];
-                const match = lastLine.match(/^(\d+)\.\s*/);
-
-                if (match) {
-                    e.preventDefault();
-                    if (/^\d+\.\s*$/.test(lastLine)) {
-                        // If it's just an empty number, remove it and just add new line
-                        const start = el.value.lastIndexOf(lastLine);
-                        el.value = el.value.substring(0, start) + '\n' + el.value.substring(el.selectionEnd);
-                        el.selectionStart = el.selectionEnd = start + 1;
-                        return;
-                    }
-                    const nextNum = parseInt(match[1], 10) + 1;
-                    const start = el.selectionStart;
-                    const end = el.selectionEnd;
-                    const insertText = '\n' + nextNum + '. ';
-                    el.value = el.value.substring(0, start) + insertText + el.value.substring(end);
-                    el.selectionStart = el.selectionEnd = start + insertText.length;
-                }
-            }
-        });
-    };
-
-    addAutoListListener('objectives');
-    addAutoListListener('guidelines');
-    addAutoListListener('criteria');
+    // Auto-list formatter is no longer needed with Quill
+    /*
+    const addAutoListListener = (id) => { ... }
+    */
 
     document.querySelectorAll('.type-card').forEach(card => {
         card.addEventListener('click', () => {
@@ -153,8 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // Update labels dynamically
             guidelinesLabel.innerHTML = `${config.subtitle1} <span class="required">*</span>`;
             criteriaLabel.innerHTML = `${config.subtitle2} <span class="required">*</span>`;
-            guidelinesInput.placeholder = config.ph1;
-            criteriaInput.placeholder = config.ph2;
 
             selectionScreen.style.display = 'none';
             formScreen.style.display = 'block';
@@ -163,6 +153,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // clear form for fresh start if not editing
             if (!editingId) {
                 document.getElementById('activityForm').reset();
+                setEditorHtml('consigna', '');
+                setEditorHtml('objectives', '');
+                setEditorHtml('guidelines', '');
+                setEditorHtml('criteria', '');
                 questionsList.innerHTML = '';
                 groupInstructionsField.style.display = 'none';
                 document.getElementById('saveActivityBtn').textContent = 'Guardar Actividad';
@@ -170,28 +164,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (type === 'evaluacion') {
                 questionsSection.style.display = 'block';
-                guidelinesInput.parentElement.style.display = 'none';
-                guidelinesInput.required = false;
-                criteriaInput.parentElement.style.display = 'none';
-                criteriaInput.required = false;
+                document.getElementById('guidelinesEditor').parentElement.style.display = 'none';
+                document.getElementById('criteriaEditor').parentElement.style.display = 'none';
 
                 groupCheckboxContainer.style.display = 'none';
                 isGroupCheckbox.checked = false;
             } else if (type === 'foro') {
                 questionsSection.style.display = 'none';
-                guidelinesInput.parentElement.style.display = 'block';
-                guidelinesInput.required = true;
-                criteriaInput.parentElement.style.display = 'block';
-                criteriaInput.required = true;
+                document.getElementById('guidelinesEditor').parentElement.style.display = 'block';
+                document.getElementById('criteriaEditor').parentElement.style.display = 'block';
 
                 groupCheckboxContainer.style.display = 'none';
                 isGroupCheckbox.checked = false;
             } else {
                 questionsSection.style.display = 'none';
-                guidelinesInput.parentElement.style.display = 'block';
-                guidelinesInput.required = true;
-                criteriaInput.parentElement.style.display = 'block';
-                criteriaInput.required = true;
+                document.getElementById('guidelinesEditor').parentElement.style.display = 'block';
+                document.getElementById('criteriaEditor').parentElement.style.display = 'block';
 
                 groupCheckboxContainer.style.display = 'block';
             }
@@ -274,13 +262,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const c = document.getElementById('previewContent');
 
         let html = `<h1>${act.title || 'Sin Título'}</h1>`;
-        html += `<h2>Consigna</h2><p>${(act.consigna || '').replace(/\\n/g, '<br>')}</p>`;
-        html += `<h2>Objetivos</h2><p>${(act.objectives || '').replace(/\\n/g, '<br>')}</p>`;
+        html += `<h2>Consigna</h2><div class="preview-text-block">${act.consigna || ''}</div>`;
+        html += `<h2>Objetivos</h2><div class="preview-text-block">${act.objectives || ''}</div>`;
 
         const config = typeConfigs[act.type] || typeConfigs['tarea'];
         if (act.type !== 'evaluacion') {
-            html += `<h2>${config.subtitle1}</h2><p>${(act.guidelines || '').replace(/\\n/g, '<br>')}</p>`;
-            html += `<h2>${config.subtitle2}</h2><p>${(act.criteria || '').replace(/\\n/g, '<br>')}</p>`;
+            html += `<h2>${config.subtitle1}</h2><div class="preview-text-block">${act.guidelines || ''}</div>`;
+            html += `<h2>${config.subtitle2}</h2><div class="preview-text-block">${act.criteria || ''}</div>`;
         }
 
         if (act.type === 'evaluacion' && act.questionsHTML) {
@@ -328,10 +316,10 @@ document.addEventListener('DOMContentLoaded', () => {
             category: document.getElementById('category').value,
             module: document.getElementById('module').value,
             title: document.getElementById('title').value,
-            consigna: document.getElementById('consigna').value,
-            objectives: document.getElementById('objectives').value,
-            guidelines: document.getElementById('guidelines').value,
-            criteria: document.getElementById('criteria').value,
+            consigna: getEditorHtml('consigna'),
+            objectives: getEditorHtml('objectives'),
+            guidelines: getEditorHtml('guidelines'),
+            criteria: getEditorHtml('criteria'),
             isGroup: isGroupCheckbox.checked,
             questionsHTML: questionsList.innerHTML
         };
@@ -345,10 +333,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('category').value = act.category || '';
         document.getElementById('module').value = act.module || '';
         document.getElementById('title').value = act.title;
-        document.getElementById('consigna').value = act.consigna;
-        document.getElementById('objectives').value = act.objectives;
-        document.getElementById('guidelines').value = act.guidelines || '';
-        document.getElementById('criteria').value = act.criteria || '';
+        setEditorHtml('consigna', act.consigna);
+        setEditorHtml('objectives', act.objectives);
+        setEditorHtml('guidelines', act.guidelines || '');
+        setEditorHtml('criteria', act.criteria || '');
         isGroupCheckbox.checked = act.isGroup;
         isGroupCheckbox.dispatchEvent(new Event('change'));
         questionsList.innerHTML = act.questionsHTML;
@@ -360,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function getQuestionHTML(type, index) {
         let specificFields = '';
         let promptLabel = type === 'estimulo' ? 'Contenido del estímulo (Texto/Historia)' : 'Raíz de la pregunta <span class="required">*</span>';
-        let baseFields = `<div class="form-group" style="margin-bottom:0.8rem;"><label>Título de la pregunta</label><input type="text" class="q-title-input" placeholder="Título de la pregunta"></div><div class="form-group"><label>${promptLabel}</label><textarea class="q-prompt" rows="2" required></textarea></div>`;
+        let baseFields = `<div class="form-group"><label>${promptLabel}</label><textarea class="q-prompt" rows="2" required></textarea></div>`;
 
         switch (type) {
             case 'opcion-multiple':
@@ -657,7 +645,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const type = actData.type;
 
             // Reusable section adder factory
-            const addSection = (subtitle, textBody) => {
+            const addSection = (subtitle, htmlContent) => {
                 // Section Title
                 children.push(
                     new Paragraph({
@@ -675,26 +663,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     })
                 );
 
-                // Section content processing line-breaks appropriately
-                const lines = textBody.split('\n');
-                lines.forEach(line => {
-                    const trimmed = line.trim();
-                    if (trimmed !== '') {
-                        children.push(
-                            new Paragraph({
-                                spacing: { after: 120 },
-                                children: [
-                                    new TextRun({
-                                        text: trimmed,
-                                        size: 24, // 12pt
-                                        font: "Arial",
-                                        color: "333333"
-                                    })
-                                ]
-                            })
-                        );
-                    }
-                });
+                // Parse HTML into docx Paragraphs
+                const parsedParagraphs = parseHTMLToDocx(htmlContent);
+                children.push(...parsedParagraphs);
             };
 
             // --- 1. TITLE (Left Aligned and Bold) ---
@@ -1045,5 +1016,104 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Convert to BLOB and return
         return await Packer.toBlob(doc);
+    }
+    function parseHTMLToDocx(html) {
+        if (!html) return [];
+
+        const { Paragraph, TextRun } = window.docx;
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+
+        const results = [];
+
+        function processNode(node, currentRuns = []) {
+            if (node.nodeType === 3) { // Text node
+                if (node.textContent.trim() || node.textContent === ' ') {
+                    currentRuns.push(new TextRun({
+                        text: node.textContent,
+                        size: 24,
+                        font: "Arial"
+                    }));
+                }
+            } else if (node.nodeType === 1) { // Element node
+                const tagName = node.tagName.toLowerCase();
+
+                if (['p', 'div', 'li'].includes(tagName)) {
+                    const childRuns = [];
+                    node.childNodes.forEach(child => processNode(child, childRuns));
+
+                    if (childRuns.length > 0) {
+                        const paraOptions = {
+                            children: childRuns,
+                            spacing: { after: 120 }
+                        };
+
+                        // Handle bullets/numbers
+                        if (tagName === 'li') {
+                            paraOptions.bullet = { level: 0 };
+                        }
+
+                        results.push(new Paragraph(paraOptions));
+                    }
+                } else if (['strong', 'b'].includes(tagName)) {
+                    const nestedRuns = [];
+                    node.childNodes.forEach(child => processNode(child, nestedRuns));
+                    nestedRuns.forEach(run => {
+                        if (run instanceof TextRun) {
+                            run.options.bold = true;
+                        }
+                    });
+                    currentRuns.push(...nestedRuns);
+                } else if (['em', 'i'].includes(tagName)) {
+                    const nestedRuns = [];
+                    node.childNodes.forEach(child => processNode(child, nestedRuns));
+                    nestedRuns.forEach(run => {
+                        if (run instanceof TextRun) {
+                            run.options.italic = true;
+                        }
+                    });
+                    currentRuns.push(...nestedRuns);
+                } else if (tagName === 'u') {
+                    const nestedRuns = [];
+                    node.childNodes.forEach(child => processNode(child, nestedRuns));
+                    nestedRuns.forEach(run => {
+                        if (run instanceof TextRun) {
+                            run.options.underline = {};
+                        }
+                    });
+                    currentRuns.push(...nestedRuns);
+                } else if (tagName === 'br') {
+                    currentRuns.push(new TextRun({ break: 1 }));
+                } else {
+                    node.childNodes.forEach(child => processNode(child, currentRuns));
+                }
+            }
+        }
+
+        tempDiv.childNodes.forEach(node => {
+            const tagName = node.nodeType === 1 ? node.tagName.toLowerCase() : null;
+            if (['p', 'li', 'div', 'ol', 'ul'].includes(tagName)) {
+                if (tagName === 'ol' || tagName === 'ul') {
+                    node.childNodes.forEach(li => {
+                        if (li.nodeType === 1 && li.tagName.toLowerCase() === 'li') {
+                            processNode(li);
+                        }
+                    });
+                } else {
+                    processNode(node);
+                }
+            } else {
+                const strayRuns = [];
+                processNode(node, strayRuns);
+                if (strayRuns.length > 0) {
+                    results.push(new Paragraph({
+                        children: strayRuns,
+                        spacing: { after: 120 }
+                    }));
+                }
+            }
+        });
+
+        return results;
     }
 });

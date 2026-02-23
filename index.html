@@ -19,6 +19,10 @@
     <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <!-- Quill Rich Text Editor -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 </head>
 
 <body>
@@ -136,26 +140,24 @@
 
                         <div class="form-group">
                             <label for="consigna">Consigna <span class="required">*</span></label>
-                            <textarea id="consigna" required rows="4"
-                                placeholder="Desarrollo principal de la actividad..."></textarea>
+                            <div id="consignaEditor" class="rich-editor"></div>
                         </div>
 
                         <div class="form-group">
                             <label for="objectives">Objetivos <span class="required">*</span></label>
-                            <textarea id="objectives" required rows="4"
-                                placeholder="¿Qué se espera que logre el estudiante?"></textarea>
+                            <div id="objectivesEditor" class="rich-editor"></div>
                         </div>
 
                         <div class="form-group">
                             <label for="guidelines" id="guidelinesLabel">Pautas de presentación <span
                                     class="required">*</span></label>
-                            <textarea id="guidelines" required rows="4" placeholder="..."></textarea>
+                            <div id="guidelinesEditor" class="rich-editor"></div>
                         </div>
 
                         <div class="form-group">
                             <label for="criteria" id="criteriaLabel">Criterios de evaluación <span
                                     class="required">*</span></label>
-                            <textarea id="criteria" required rows="4" placeholder="..."></textarea>
+                            <div id="criteriaEditor" class="rich-editor"></div>
                         </div>
 
                         <div id="questionsSection" style="display: none; margin-top: 2rem;">
