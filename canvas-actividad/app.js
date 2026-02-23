@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Allow smooth UI rendering before scrolling
             setTimeout(() => {
-                groupInstructionsField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                groupInstructionsField.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);
         } else {
             groupInstructionsField.style.display = 'none';
@@ -158,6 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             selectionScreen.style.display = 'none';
             formScreen.style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
 
             // clear form for fresh start if not editing
             if (!editingId) {
@@ -201,6 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formScreen.style.display = 'none';
         selectionScreen.style.display = 'block';
         editingId = null;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
     function renderActivitiesList() {
