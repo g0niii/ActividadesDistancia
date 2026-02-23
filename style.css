@@ -61,10 +61,10 @@ header h1 {
 }
 
 .sied-logo {
-    height: 50px;
+    height: 85px;
     background: white;
-    padding: 5px;
-    border-radius: 4px;
+    padding: 10px;
+    border-radius: 6px;
 }
 
 main.main-layout {
@@ -476,5 +476,11 @@ textarea:focus {
     .preview-icon svg {
         width: 18px;
         height: 18px;
+    }
+
+    .sied-logo {
+        width: 100%;
+        height: auto;
+        margin-top: 10px;
     }
 }
