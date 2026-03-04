@@ -1,12 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
-    let activities = [];
+    let resources = [];
     let editingId = null;
     let questionIndex = 0;
     const questionsList = document.getElementById('questionsList');
 
     const isGroupCheckbox = document.getElementById('isGroup');
     const groupInstructionsField = document.getElementById('groupInstructionsField');
-    const sidebarList = document.getElementById('activitiesList');
+    const sidebarList = document.getElementById('resourcesList');
     const downloadAllBtn = document.getElementById('downloadAllBtn');
 
     // Quill Editors Initialization
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
             toolbar: [
                 ['bold', 'italic', 'underline'],
                 [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                ['clean']
+                ['image', 'clean']
             ]
         }
     };
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectionScreen = document.getElementById('selectionScreen');
     const formScreen = document.getElementById('formScreen');
     const backBtn = document.getElementById('backBtn');
-    const activityTypeInput = document.getElementById('activityType');
+    const resourceTypeInput = document.getElementById('resourceType');
     const formTitle = document.getElementById('formTitle');
     const questionsSection = document.getElementById('questionsSection');
     const groupCheckboxContainer = document.getElementById('groupCheckboxContainer');
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newPrefix = `${cat} M${mod} - `;
         const oldVal = titleInput.value;
 
-        const regex = /^(Actividad obligatoria|Actividad sugerida|Foro obligatorio|Foro sugerido|Evaluación|Autoevaluación)\s+M\d+\s+-\s*/i;
+        const regex = /^(Actividad obligatoria|Actividad sugerida|Foro obligatorio|Foro sugerido|Evaluación|Autoevaluación|Montaje|Referencia bibliográfica)\s+M\d+\s+-\s*/i;
         if (regex.test(oldVal)) {
             titleInput.value = oldVal.replace(regex, newPrefix);
         } else if (oldVal === '') {
@@ -113,6 +113,13 @@ document.addEventListener('DOMContentLoaded', () => {
             subtitle2: 'Configuración de la evaluación',
             ph1: 'Reglas para el cuestionario...',
             ph2: 'Tiempo, cantidad de intentos permitidos, etc.'
+        },
+        'planilla': {
+            title: 'Planilla de Montaje (Mapa del Curso)',
+            subtitle1: 'Notas del Asesor Pedagógico',
+            subtitle2: 'Observaciones para Maquetación',
+            ph1: 'Escribe aquí consejos o pautas generales para el curso...',
+            ph2: 'Detalles técnicos de configuración estructural...'
         }
     };
 
@@ -126,17 +133,63 @@ document.addEventListener('DOMContentLoaded', () => {
             const type = card.getAttribute('data-type');
             const config = typeConfigs[type];
 
-            activityTypeInput.value = type;
+            resourceTypeInput.value = type;
             formTitle.textContent = config.title;
 
             // Update category options based on type and set specific placeholder examples
+            // 1. GLOBAL VISIBILITY RESET (Prevent glitches between types)
+            document.getElementById('defaultHeader').style.display = 'block';
+            document.getElementById('planillaHeader').style.display = 'none';
+            document.getElementById('titleGroup').style.display = 'block';
+            questionsSection.style.display = 'none';
+            document.getElementById('mountingSection').style.display = 'none';
+            document.getElementById('guidelinesEditor').parentElement.style.display = 'block';
+            document.getElementById('criteriaEditor').parentElement.style.display = 'block';
+            document.getElementById('consignaEditor').parentElement.style.display = 'block';
+            document.getElementById('objectivesEditor').parentElement.style.display = 'block';
+            groupCheckboxContainer.style.display = 'block';
+
+            // 2. REQUIRED FIELDS RESET
+            titleInput.required = true;
+            modInput.required = true;
+            catSelect.required = true;
+            ['subjectName', 'career', 'contentAuthor', 'driveLink'].forEach(id => document.getElementById(id).required = false);
+
+            // 3. APPLY TYPE CONFIGURATION
             catSelect.innerHTML = '<option value="" disabled selected>Seleccionar...</option>';
             if (type === 'foro') {
                 catSelect.innerHTML += '<option value="Foro obligatorio">Foro obligatorio</option><option value="Foro sugerido">Foro sugerido</option>';
                 titleInput.placeholder = 'Ej: Foro sugerido M1 - Debate sobre unidad 1';
+                groupCheckboxContainer.style.display = 'none';
             } else if (type === 'evaluacion') {
                 catSelect.innerHTML += '<option value="Evaluación">Evaluación</option><option value="Autoevaluación">Autoevaluación</option>';
                 titleInput.placeholder = 'Ej: Autoevaluación M1 - Cuestionario inicial';
+                questionsSection.style.display = 'block';
+                document.getElementById('guidelinesEditor').parentElement.style.display = 'none';
+                document.getElementById('criteriaEditor').parentElement.style.display = 'none';
+                groupCheckboxContainer.style.display = 'none';
+            } else if (type === 'planilla') {
+                catSelect.innerHTML += '<option value="Montaje" selected>Planilla de Montaje</option>';
+                titleInput.value = 'Planilla de Montaje';
+                document.getElementById('defaultHeader').style.display = 'none';
+                document.getElementById('planillaHeader').style.display = 'block';
+                document.getElementById('titleGroup').style.display = 'none';
+                document.getElementById('mountingSection').style.display = 'block';
+                document.getElementById('consignaEditor').parentElement.style.display = 'none';
+                document.getElementById('objectivesEditor').parentElement.style.display = 'none';
+
+                titleInput.required = false;
+                modInput.required = false;
+                catSelect.required = false;
+                ['subjectName', 'career', 'contentAuthor', 'driveLink'].forEach(id => document.getElementById(id).required = true);
+
+                catSelect.value = "Montaje";
+                modInput.value = "0";
+                groupCheckboxContainer.style.display = 'none';
+            } else if (type === 'pagina') {
+                catSelect.innerHTML += '<option value="Actividad sugerida">Contenido M1</option>';
+                titleInput.placeholder = 'Ej: 1.1. Nombre de la página';
+                groupCheckboxContainer.style.display = 'none';
             } else {
                 catSelect.innerHTML += '<option value="Actividad obligatoria">Obligatoria</option><option value="Actividad sugerida">Sugerida</option>';
                 titleInput.placeholder = 'Ej: Actividad obligatoria M1 - Trabajo final';
@@ -152,36 +205,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // clear form for fresh start if not editing
             if (!editingId) {
-                document.getElementById('activityForm').reset();
+                document.getElementById('resourceForm').reset();
                 setEditorHtml('consigna', '');
                 setEditorHtml('objectives', '');
-                setEditorHtml('guidelines', '');
                 setEditorHtml('criteria', '');
                 questionsList.innerHTML = '';
+                document.getElementById('canvasModuleContainer').innerHTML = ''; // reset worksheet
                 groupInstructionsField.style.display = 'none';
-                document.getElementById('saveActivityBtn').textContent = 'Guardar Actividad';
+                document.getElementById('saveResourceBtn').textContent = 'Guardar Recurso';
             }
 
-            if (type === 'evaluacion') {
-                questionsSection.style.display = 'block';
-                document.getElementById('guidelinesEditor').parentElement.style.display = 'none';
-                document.getElementById('criteriaEditor').parentElement.style.display = 'none';
-
-                groupCheckboxContainer.style.display = 'none';
+            isGroupCheckbox.checked = false;
+            if (type !== 'planilla' && type !== 'evaluacion' && type !== 'foro' && type !== 'pagina') {
                 isGroupCheckbox.checked = false;
-            } else if (type === 'foro') {
-                questionsSection.style.display = 'none';
-                document.getElementById('guidelinesEditor').parentElement.style.display = 'block';
-                document.getElementById('criteriaEditor').parentElement.style.display = 'block';
-
-                groupCheckboxContainer.style.display = 'none';
-                isGroupCheckbox.checked = false;
-            } else {
-                questionsSection.style.display = 'none';
-                document.getElementById('guidelinesEditor').parentElement.style.display = 'block';
-                document.getElementById('criteriaEditor').parentElement.style.display = 'block';
-
-                groupCheckboxContainer.style.display = 'block';
             }
         });
     });
@@ -193,20 +229,20 @@ document.addEventListener('DOMContentLoaded', () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
-    function renderActivitiesList() {
+    function renderResourcesList() {
         sidebarList.innerHTML = '';
-        if (activities.length === 0) {
-            sidebarList.innerHTML = '<p class="empty-msg" style="color:#5C666F; font-size: 0.95rem;">No hay actividades guardadas.</p>';
+        if (resources.length === 0) {
+            sidebarList.innerHTML = '<p class="empty-msg" style="color:#5C666F; font-size: 0.95rem;">No hay recursos guardados.</p>';
             downloadAllBtn.style.display = 'none';
             return;
         }
 
-        activities.forEach(act => {
+        resources.forEach(res => {
             const div = document.createElement('div');
             div.className = 'act-item';
             div.innerHTML = `
-                <div class="act-type">${typeConfigs[act.type].title.replace('Generar ', '')}</div>
-                <h4>${act.title || 'Sin Título'}</h4>
+                <div class="act-type">${typeConfigs[res.type].title.replace('Generar ', '')}</div>
+                <h4>${res.title || 'Sin Título'}</h4>
             `;
             const actions = document.createElement('div');
             actions.style.display = 'flex';
@@ -217,13 +253,13 @@ document.addEventListener('DOMContentLoaded', () => {
             editBtn.type = 'button';
             editBtn.className = 'btn-small';
             editBtn.textContent = 'Editar';
-            editBtn.onclick = () => loadFormData(act);
+            editBtn.onclick = () => loadFormData(res);
 
             const previewBtn = document.createElement('button');
             previewBtn.type = 'button';
             previewBtn.className = 'btn-small';
             previewBtn.textContent = '👀 Ver';
-            previewBtn.onclick = () => showPreview(act);
+            previewBtn.onclick = () => showPreview(res);
 
             const delBtn = document.createElement('button');
             delBtn.type = 'button';
@@ -231,17 +267,55 @@ document.addEventListener('DOMContentLoaded', () => {
             delBtn.style.color = 'var(--error-color)';
             delBtn.textContent = 'Borrar';
             delBtn.onclick = () => {
-                activities = activities.filter(a => a.id !== act.id);
-                if (editingId === act.id) {
+                resources = resources.filter(r => r.id !== res.id);
+                if (editingId === res.id) {
                     formScreen.style.display = 'none';
                     selectionScreen.style.display = 'block';
                     editingId = null;
                 }
-                renderActivitiesList();
+                renderResourcesList();
+            };
+
+            const downloadBtn = document.createElement('button');
+            downloadBtn.type = 'button';
+            downloadBtn.className = 'btn-small';
+            downloadBtn.style.background = '#e7f3ff';
+            downloadBtn.style.color = '#0055a2';
+            downloadBtn.textContent = '📥 Docx';
+            downloadBtn.onclick = async () => {
+                const orig = downloadBtn.textContent;
+                downloadBtn.textContent = '...';
+                try {
+                    const blob = await buildDocxBlob(res);
+                    const safeTitle = (res.title || 'Recurso').normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '');
+                    window.saveAs(blob, `${safeTitle}.docx`);
+                } catch (e) {
+                    console.error(e);
+                    alert("Error: " + e.message);
+                } finally {
+                    downloadBtn.textContent = orig;
+                }
+            };
+
+            const excelBtn = document.createElement('button');
+            excelBtn.type = 'button';
+            excelBtn.className = 'btn-small';
+            excelBtn.style.background = '#e6f4ea';
+            excelBtn.style.color = '#137333';
+            excelBtn.textContent = '📊 Excel';
+            excelBtn.onclick = async () => {
+                try {
+                    const safeTitle = (res.title || 'Recurso').normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '');
+                    await downloadExcel(res, safeTitle);
+                } catch (e) {
+                    alert("Error: " + e.message);
+                }
             };
 
             actions.appendChild(previewBtn);
             actions.appendChild(editBtn);
+            actions.appendChild(downloadBtn);
+            actions.appendChild(excelBtn);
             actions.appendChild(delBtn);
             div.appendChild(actions);
             sidebarList.appendChild(div);
@@ -252,18 +326,138 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const modal = document.getElementById('previewModal');
     const closeBtn = document.querySelector('.close-modal');
+    const copyBtn = document.getElementById('copyToClipboardBtn');
 
     closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
     window.addEventListener('click', (e) => {
         if (e.target === modal) { modal.style.display = 'none'; }
     });
 
+    copyBtn.addEventListener('click', async () => {
+        const content = document.getElementById('previewContent');
+
+        // Create a temporary element to hold the styled HTML for copying
+        const tempElement = document.createElement('div');
+        tempElement.innerHTML = content.innerHTML;
+
+        // Inject essential inline styles for Google Docs compatibility
+        tempElement.style.fontFamily = 'Arial, sans-serif';
+        tempElement.style.color = '#333';
+
+        tempElement.querySelectorAll('h1').forEach(h => h.style.cssText = 'font-family: Arial; color: #2d3b45; font-size: 24pt; font-weight: bold; margin-bottom: 20px;');
+        tempElement.querySelectorAll('h2').forEach(h => h.style.cssText = 'font-family: Arial; color: #1967d2; font-size: 16pt; font-weight: bold; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #e8eaed; padding-bottom: 5px;');
+
+        tempElement.querySelectorAll('p, div, li, span').forEach(el => {
+            if (!el.getAttribute('style') || !el.style.fontFamily) el.style.fontFamily = 'Arial, sans-serif';
+            if (!el.style.fontSize) el.style.fontSize = '11pt';
+            if (!el.style.lineHeight) el.style.lineHeight = '1.5';
+        });
+
+        tempElement.querySelectorAll('table').forEach(tbl => {
+            tbl.style.width = '100%';
+            tbl.style.borderCollapse = 'collapse';
+            tbl.style.marginBottom = '20px';
+            tbl.setAttribute('border', '1');
+            tbl.style.border = '1px solid #ddd';
+        });
+
+        tempElement.querySelectorAll('td').forEach(td => {
+            td.style.border = '1px solid #ddd';
+            td.style.padding = '12px';
+            td.style.fontFamily = 'Arial, sans-serif';
+            td.style.fontSize = '10.5pt';
+        });
+
+        tempElement.querySelectorAll('strong').forEach(s => s.style.fontWeight = 'bold');
+        tempElement.querySelectorAll('em').forEach(e => e.style.fontStyle = 'italic');
+
+        // Special handling for lists to ensure they look okay
+        tempElement.querySelectorAll('ul, ol').forEach(list => {
+            list.style.paddingLeft = '30px';
+            list.style.marginTop = '10px';
+            list.style.marginBottom = '10px';
+        });
+
+        // Add to body briefly to copy
+        document.body.appendChild(tempElement);
+        const range = document.createRange();
+        range.selectNode(tempElement);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+
+        try {
+            document.execCommand('copy');
+            const origText = copyBtn.textContent;
+            copyBtn.textContent = '✅ ¡Copiado!';
+            copyBtn.style.background = '#e6ffed';
+            copyBtn.style.color = '#22863a';
+            setTimeout(() => {
+                copyBtn.textContent = origText;
+                copyBtn.style.background = '#e8f0fe';
+                copyBtn.style.color = '#1967d2';
+            }, 2000);
+        } catch (err) {
+            alert('No se pudo copiar el contenido.');
+        }
+
+        document.body.removeChild(tempElement);
+        window.getSelection().removeAllRanges();
+    });
     function showPreview(act) {
         const c = document.getElementById('previewContent');
 
         let html = `<h1>${act.title || 'Sin Título'}</h1>`;
-        html += `<h2>Consigna</h2><div class="preview-text-block">${act.consigna || ''}</div>`;
-        html += `<h2>Objetivos</h2><div class="preview-text-block">${act.objectives || ''}</div>`;
+
+        if (act.type === 'planilla') {
+            html = `<h1 style="margin-bottom:0.5rem; font-family: Arial; color: #2D3B45;">Planilla de Montaje</h1>`;
+            html += `
+            <table style="width:100%; border-collapse: collapse; margin-bottom:1.5rem; font-family: Arial; font-size: 10pt;">
+                <tr>
+                    <td style="border: 1px solid #C7CDD1; padding: 10px; background: #f8f9fa;"><strong>Asignatura:</strong> ${act.subjectName || '-'}</td>
+                    <td style="border: 1px solid #C7CDD1; padding: 10px; background: #f8f9fa;"><strong>Carrera:</strong> ${act.career || '-'}</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #C7CDD1; padding: 10px; background: #f8f9fa;"><strong>Docente:</strong> ${act.contentAuthor || '-'}</td>
+                    <td style="border: 1px solid #C7CDD1; padding: 10px; background: #f8f9fa;"><strong>Drive:</strong> <a href="${act.driveLink}" target="_blank" style="color:#0055a2;">Link al Drive</a></td>
+                </tr>
+            </table>`;
+
+            html += `<h2 style="border-bottom: 2px solid #C7CDD1; padding-bottom:5px; font-family: Arial; color: #2D3B45;">Mapa del Curso</h2><div class="canvas-preview-flow">`;
+            const tempFlow = document.createElement('div');
+            tempFlow.innerHTML = act.mountingHTML || '';
+            const modules = tempFlow.querySelectorAll('.canvas-module');
+
+            modules.forEach(m => {
+                const title = m.querySelector('.mod-title')?.value || 'Módulo sin título';
+                html += `<div style="margin-bottom: 20px;">
+                    <div style="background: #f1f3f4; padding: 10px; font-weight: bold; border: 1px solid #dadce0; font-family: Arial;">${title}</div>
+                    <table style="width:100%; border-collapse: collapse; font-family: Arial;">`;
+
+                const items = m.querySelectorAll('.canvas-item');
+                items.forEach(it => {
+                    const itTitle = it.querySelector('.item-title')?.value || 'Ítem sin título';
+                    const itType = it.querySelector('.item-type-select')?.value || 'page';
+                    const itComment = it.querySelector('.item-comment')?.value || '';
+
+                    const iconMap = { 'page': '📄', 'assignment': '📝', 'quiz': '🚀', 'discussion': '💬', 'file': '📎', 'link': '🔗' };
+
+                    html += `<tr>
+                        <td style="border-bottom: 1px solid #e1e3e4; padding: 10px; vertical-align: middle;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-size: 1.2rem;">${iconMap[itType] || '📄'}</span>
+                                <span style="font-weight: bold;">${itTitle}</span>
+                            </div>
+                            ${itComment ? `<div style="margin-top:4px; font-size:0.85rem; color:#666; font-style:italic; padding-left:28px;">Observación: ${itComment}</div>` : ''}
+                        </td>
+                    </tr>`;
+                });
+                html += `</table></div>`;
+            });
+            html += `</div>`;
+        } else {
+            html += `<h2 style="font-family: Arial; color: #2D3B45;">Consigna</h2><div class="preview-text-block" style="font-family: Arial; line-height: 1.6;">${act.consigna || ''}</div>`;
+            html += `<h2 style="font-family: Arial; color: #2D3B45;">Objetivos</h2><div class="preview-text-block" style="font-family: Arial; line-height: 1.6;">${act.objectives || ''}</div>`;
+        }
 
         const config = typeConfigs[act.type] || typeConfigs['tarea'];
         if (act.type !== 'evaluacion') {
@@ -309,39 +503,53 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getFormData() {
+        if (resourceTypeInput.value === 'planilla') {
+            document.getElementById('title').value = document.getElementById('subjectName').value || 'Planilla de Montaje';
+        }
         syncDOMValues(questionsList);
+        syncDOMValues(document.getElementById('canvasModuleContainer'));
         return {
             id: editingId || Date.now().toString(),
-            type: activityTypeInput.value,
+            type: resourceTypeInput.value,
             category: document.getElementById('category').value,
             module: document.getElementById('module').value,
             title: document.getElementById('title').value,
+            subjectName: document.getElementById('subjectName').value,
+            career: document.getElementById('career').value,
+            contentAuthor: document.getElementById('contentAuthor').value,
+            driveLink: document.getElementById('driveLink').value,
             consigna: getEditorHtml('consigna'),
             objectives: getEditorHtml('objectives'),
             guidelines: getEditorHtml('guidelines'),
             criteria: getEditorHtml('criteria'),
             isGroup: isGroupCheckbox.checked,
-            questionsHTML: questionsList.innerHTML
+            questionsHTML: questionsList.innerHTML,
+            mountingHTML: document.getElementById('canvasModuleContainer').innerHTML
         };
     }
 
-    function loadFormData(act) {
-        editingId = act.id;
-        document.querySelector(`.type-card[data-type="${act.type}"]`).click();
+    function loadFormData(res) {
+        editingId = res.id;
+        document.querySelector(`.type-card[data-type="${res.type}"]`).click();
 
-        activityTypeInput.value = act.type;
-        document.getElementById('category').value = act.category || '';
-        document.getElementById('module').value = act.module || '';
-        document.getElementById('title').value = act.title;
-        setEditorHtml('consigna', act.consigna);
-        setEditorHtml('objectives', act.objectives);
-        setEditorHtml('guidelines', act.guidelines || '');
-        setEditorHtml('criteria', act.criteria || '');
-        isGroupCheckbox.checked = act.isGroup;
+        resourceTypeInput.value = res.type;
+        document.getElementById('category').value = res.category || '';
+        document.getElementById('module').value = res.module || '';
+        document.getElementById('title').value = res.title;
+        document.getElementById('subjectName').value = res.subjectName || '';
+        document.getElementById('career').value = res.career || '';
+        document.getElementById('contentAuthor').value = res.contentAuthor || '';
+        document.getElementById('driveLink').value = res.driveLink || '';
+        setEditorHtml('consigna', res.consigna);
+        setEditorHtml('objectives', res.objectives);
+        setEditorHtml('guidelines', res.guidelines || '');
+        setEditorHtml('criteria', res.criteria || '');
+        isGroupCheckbox.checked = res.isGroup;
         isGroupCheckbox.dispatchEvent(new Event('change'));
-        questionsList.innerHTML = act.questionsHTML;
+        questionsList.innerHTML = res.questionsHTML || '';
+        document.getElementById('canvasModuleContainer').innerHTML = res.mountingHTML || '';
 
-        document.getElementById('saveActivityBtn').textContent = 'Guardar Cambios';
+        document.getElementById('saveResourceBtn').textContent = 'Guardar Cambios';
     }
 
     // Question Builder Logic
@@ -559,130 +767,255 @@ document.addEventListener('DOMContentLoaded', () => {
             container.appendChild(newItem);
             return;
         }
+
+        // --- Canvas Module Builder Management ---
+        if (e.target.closest('#addCanvasModuleBtn')) {
+            const container = document.getElementById('canvasModuleContainer');
+            const mod = document.createElement('div');
+            mod.className = 'canvas-module';
+            mod.innerHTML = `
+                <div class="canvas-module-header">
+                    <span class="drag-handle">⠿</span>
+                    <input type="text" placeholder="Título del Módulo (ej: Módulo 1: Introducción)" class="mod-title">
+                    <button type="button" class="rm-module-btn">Eliminar Módulo</button>
+                </div>
+                <div class="canvas-item-list"></div>
+                <div class="canvas-module-footer">
+                    <button type="button" class="add-canvas-item-btn secondary-btn">+ Agregar Ítem</button>
+                </div>
+            `;
+            container.appendChild(mod);
+            return;
+        }
+
+        if (e.target.closest('.add-canvas-item-btn')) {
+            const itemList = e.target.closest('.canvas-module').querySelector('.canvas-item-list');
+            const item = document.createElement('div');
+            item.className = 'canvas-item';
+            item.innerHTML = `
+                <div class="canvas-item-main">
+                    <span class="drag-handle">⠿</span>
+                    <select class="item-type-select">
+                        <option value="page">📄 Página</option>
+                        <option value="assignment">📝 Tarea</option>
+                        <option value="quiz">🚀 Evaluación</option>
+                        <option value="discussion">💬 Foro</option>
+                        <option value="file">📎 Archivo</option>
+                        <option value="link">🔗 Enlace</option>
+                    </select>
+                    <input type="text" placeholder="1.1. Nombre de la página" class="item-title">
+                    <div class="item-actions">
+                        <button type="button" class="rm-item-btn btn-small">X</button>
+                    </div>
+                </div>
+                <div class="canvas-item-details">
+                    <input type="text" placeholder="Observaciones / Comentarios para maquetación..." class="item-comment">
+                </div>
+            `;
+            itemList.appendChild(item);
+            return;
+        }
+
+        if (e.target.closest('.rm-module-btn')) {
+            e.target.closest('.canvas-module').remove();
+            return;
+        }
+
+        if (e.target.closest('.rm-item-btn')) {
+            e.target.closest('.canvas-item').remove();
+            return;
+        }
     });
 
-    document.getElementById('saveActivityBtn').addEventListener('click', () => {
-        if (!document.getElementById('activityForm').reportValidity()) return;
+    // Delegated Change listener for dynamic placeholders
+    document.addEventListener('change', (e) => {
+        if (e.target.closest('.item-type-select')) {
+            const select = e.target.closest('.item-type-select');
+            const item = select.closest('.canvas-item');
+            const titleInput = item.querySelector('.item-title');
+            const val = select.value;
+
+            if (val === 'assignment') titleInput.placeholder = "Actividad sugerida/obligatoria M1 - Nombre";
+            else if (val === 'quiz') titleInput.placeholder = "Evaluación/Autoevaluación M1";
+            else if (val === 'discussion') titleInput.placeholder = "Foro M1 - Nombre";
+            else if (val === 'link') titleInput.placeholder = "Enlace";
+            else if (val === 'file') titleInput.placeholder = "Enlace del Archivo";
+            else titleInput.placeholder = "1.1. Nombre de la página";
+        }
+    });
+
+    document.getElementById('saveResourceBtn').addEventListener('click', () => {
+        if (!document.getElementById('resourceForm').reportValidity()) return;
         const data = getFormData();
-        const existingIdx = activities.findIndex(a => a.id === data.id);
-        if (existingIdx >= 0) activities[existingIdx] = data;
-        else activities.push(data);
+        const existingIdx = resources.findIndex(r => r.id === data.id);
+        if (existingIdx >= 0) resources[existingIdx] = data;
+        else resources.push(data);
 
         editingId = null;
-        document.getElementById('activityForm').reset();
+        document.getElementById('resourceForm').reset();
         questionsList.innerHTML = '';
-        document.getElementById('saveActivityBtn').textContent = 'Guardar Actividad';
+        document.getElementById('saveResourceBtn').textContent = 'Guardar Recurso';
         formScreen.style.display = 'none';
         selectionScreen.style.display = 'block';
-        renderActivitiesList();
+        renderResourcesList();
     });
 
     document.getElementById('generateDocxBtn').addEventListener('click', async () => {
-        if (!document.getElementById('activityForm').reportValidity()) return;
+        if (!document.getElementById('resourceForm').reportValidity()) return;
         const btn = document.getElementById('generateDocxBtn');
         const orig = btn.innerHTML;
         btn.innerHTML = `<span>Generando...</span>`; btn.disabled = true;
         try {
-            const actData = getFormData();
-            const blob = await buildDocxBlob(actData);
+            const resData = getFormData();
+            const blob = await buildDocxBlob(resData);
 
             // FILENAME FORMATING FIX: 
             // Chrome running on file:/// breaks the automatic download entirely (gives UUIDs) if it sees spaces or weird chars
-            const safeTitle = actData.title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '') || 'Actividad';
+            const safeTitle = resData.title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '') || 'Recurso';
 
             window.saveAs(blob, `${safeTitle}.docx`);
         } catch (e) {
-            console.error(e); alert('Error al generar Docx.');
+            console.error(e);
+            alert('Error al generar Docx: ' + (e.message || 'Desconocido'));
         } finally {
             btn.innerHTML = orig; btn.disabled = false;
+        }
+    });
+
+    document.getElementById('generateExcelBtn').addEventListener('click', async () => {
+        if (!document.getElementById('resourceForm').reportValidity()) return;
+        const resData = getFormData();
+        try {
+            const safeTitle = resData.title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '') || 'Recurso';
+            await downloadExcel(resData, safeTitle);
+        } catch (e) {
+            console.error(e);
+            alert('Error al generar Excel: ' + (e.message || 'Desconocido'));
         }
     });
 
     downloadAllBtn.addEventListener('click', async () => {
-        if (activities.length === 0) return;
+        if (resources.length === 0) return;
         const btn = downloadAllBtn;
         const orig = btn.innerHTML;
         btn.innerHTML = `Generando Word...`; btn.disabled = true;
         try {
-            const blob = await buildDocxBlob(activities);
-            window.saveAs(blob, `Todas_Las_Actividades.docx`);
+            const blob = await buildDocxBlob(resources);
+            window.saveAs(blob, `Todos_Los_Recursos.docx`);
         } catch (e) {
-            console.error(e); alert('Error generando documento consolidado');
+            console.error(e);
+            alert('Error generando documento consolidado: ' + (e.message || 'Desconocido'));
         } finally {
             btn.innerHTML = orig; btn.disabled = false;
         }
     });
 
-    // Expects an array of activities.
-    // If a single activity is passed, wrap it in an array to match logic.
-    async function buildDocxBlob(actInput) {
-        const acts = Array.isArray(actInput) ? actInput : [actInput];
+    // Expects an array of resources.
+    // If a single resource is passed, wrap it in an array to match logic.
+    async function buildDocxBlob(resInput) {
+        const resourcesArray = Array.isArray(resInput) ? resInput : [resInput];
         if (!window.docx) throw new Error('Docx library not loaded');
         // Destructure definitions from window.docx
-        const { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel, Table, TableRow, TableCell, BorderStyle, WidthType } = window.docx;
+        const { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, HeadingLevel, Table, TableRow, TableCell, BorderStyle, WidthType, VerticalAlign } = window.docx;
 
         // Prepare children paragraphs for the document body
         const children = [];
 
-        for (let i = 0; i < acts.length; i++) {
-            const actData = acts[i];
+        // Constants for document styling
+        const TABLE_WIDTH = 9031; // ~16cm in DXA
+        const HALF_TABLE = 4515;
+
+        for (let i = 0; i < resourcesArray.length; i++) {
+            const resData = resourcesArray[i];
 
             if (i > 0) {
-                // Insert page break before the next activity
                 children.push(new Paragraph({
                     pageBreakBefore: true,
                     children: [new TextRun("")]
                 }));
             }
 
-            // Retrieve info from object
-            const title = actData.title;
-            const consigna = actData.consigna;
-            const objectives = actData.objectives;
-            const guidelines = actData.guidelines;
-            const criteria = actData.criteria;
-            const isGroup = actData.isGroup;
-            const type = actData.type;
+            const title = resData.title;
+            const consigna = resData.consigna;
+            const objectives = resData.objectives;
+            const guidelines = resData.guidelines;
+            const criteria = resData.criteria;
+            const isGroup = resData.isGroup;
+            const type = resData.type;
 
-            // Reusable section adder factory
             const addSection = (subtitle, htmlContent) => {
-                // Section Title
                 children.push(
                     new Paragraph({
                         heading: HeadingLevel.HEADING_3,
-                        spacing: { before: 400, after: 150 },
+                        spacing: { before: 200, after: 100 },
                         children: [
                             new TextRun({
                                 text: subtitle,
                                 bold: true,
-                                size: 28, // 14pt
+                                size: 24, // 12pt
                                 color: "2D3B45",
                                 font: "Arial"
                             }),
                         ],
                     })
                 );
-
-                // Parse HTML into docx Paragraphs
                 const parsedParagraphs = parseHTMLToDocx(htmlContent);
                 children.push(...parsedParagraphs);
             };
 
-            // --- 1. TITLE (Left Aligned and Bold) ---
-            children.push(
-                new Paragraph({
-                    heading: HeadingLevel.HEADING_2,
-                    spacing: { after: 400 },
-                    children: [
-                        new TextRun({
-                            text: title,
-                            bold: true,
-                            size: 36, // 18pt (represented in half-points)
-                            font: "Arial"
-                        }),
-                    ],
-                })
-            );
+            if (type === 'planilla') {
+                children.push(
+                    new Paragraph({
+                        heading: HeadingLevel.HEADING_2,
+                        spacing: { after: 200 },
+                        children: [new TextRun({ text: "Planilla de Montaje - Mapa del Curso", bold: true, size: 32, font: "Arial", color: "2D3B45" })],
+                    })
+                );
+
+                children.push(
+                    new Table({
+                        width: { size: TABLE_WIDTH, type: WidthType.DXA },
+                        columnWidths: [HALF_TABLE, HALF_TABLE],
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    new TableCell({ width: { size: HALF_TABLE, type: WidthType.DXA }, children: [new Paragraph({ spacing: { before: 80, after: 80 }, children: [new TextRun({ text: "Asignatura: ", bold: true, font: "Arial", size: 18 }), new TextRun({ text: resData.subjectName || "-", font: "Arial", size: 18 })] })] }),
+                                    new TableCell({ width: { size: HALF_TABLE, type: WidthType.DXA }, children: [new Paragraph({ spacing: { before: 80, after: 80 }, children: [new TextRun({ text: "Carrera: ", bold: true, font: "Arial", size: 18 }), new TextRun({ text: resData.career || "-", font: "Arial", size: 18 })] })] }),
+                                ]
+                            }),
+                            new TableRow({
+                                children: [
+                                    new TableCell({ width: { size: HALF_TABLE, type: WidthType.DXA }, children: [new Paragraph({ spacing: { before: 80, after: 80 }, children: [new TextRun({ text: "Docente: ", bold: true, font: "Arial", size: 18 }), new TextRun({ text: resData.contentAuthor || "-", font: "Arial", size: 18 })] })] }),
+                                    new TableCell({ width: { size: HALF_TABLE, type: WidthType.DXA }, children: [new Paragraph({ spacing: { before: 80, after: 80 }, children: [new TextRun({ text: "Drive del curso: ", bold: true, font: "Arial", size: 18 }), new TextRun({ text: resData.driveLink || "-", color: "0000FF", underline: {}, font: "Arial", size: 18 })] })] }),
+                                ]
+                            })
+                        ],
+                        borders: {
+                            insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "C7CDD1" },
+                            insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "C7CDD1" },
+                            top: { style: BorderStyle.SINGLE, size: 1, color: "C7CDD1" },
+                            bottom: { style: BorderStyle.SINGLE, size: 1, color: "C7CDD1" },
+                            left: { style: BorderStyle.SINGLE, size: 1, color: "C7CDD1" },
+                            right: { style: BorderStyle.SINGLE, size: 1, color: "C7CDD1" },
+                        }
+                    })
+                );
+            } else {
+                children.push(
+                    new Paragraph({
+                        heading: HeadingLevel.HEADING_2,
+                        spacing: { before: 100, after: 200 },
+                        children: [
+                            new TextRun({
+                                text: title,
+                                bold: true,
+                                size: 32, // 16pt
+                                font: "Arial"
+                            }),
+                        ],
+                    })
+                );
+            }
 
             // --- 2. CONSIGNA ---
             addSection("Consigna", consigna);
@@ -698,14 +1031,105 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // --- 5. EVALUATION CRITERIA (DYNAMIC) ---
-            if (type !== 'evaluacion') {
+            if (type !== 'evaluacion' && type !== 'planilla') {
                 addSection(config.subtitle2, criteria);
+            }
+
+            // --- 5b. CANVAS MODULES EXPORT (DYNAMIC) ---
+            if (type === 'planilla') {
+                const tempFlow = document.createElement('div');
+                tempFlow.innerHTML = resData.mountingHTML || '';
+                const modules = tempFlow.querySelectorAll('.canvas-module');
+
+                modules.forEach(m => {
+                    const modTitle = m.querySelector('.mod-title')?.value || 'Módulo';
+
+                    // Module Header Row
+                    children.push(new Paragraph({
+                        heading: HeadingLevel.HEADING_3,
+                        spacing: { before: 250, after: 100 },
+                        children: [new TextRun({ text: modTitle, bold: true, size: 24, color: "2D3B45", font: "Arial" })],
+                        shading: { fill: "f5f5f5" }
+                    }));
+
+                    const items = m.querySelectorAll('.canvas-item');
+                    const tableRows = [];
+
+                    items.forEach(it => {
+                        const itTitle = it.querySelector('.item-title')?.value || '-';
+                        const itType = it.querySelector('.item-type-select')?.value || 'page';
+                        const itComment = it.querySelector('.item-comment')?.value || '';
+
+                        const iconMap = { 'page': '📄', 'assignment': '📝', 'quiz': '🚀', 'discussion': '💬', 'file': '📎', 'link': '🔗' };
+
+                        const cellContents = [
+                            new Paragraph({
+                                spacing: { before: 40, after: itComment ? 40 : 40 },
+                                children: [
+                                    new TextRun({ text: (iconMap[itType] || '📄') + " ", size: 20 }),
+                                    new TextRun({ text: itTitle, size: 20, font: "Arial", bold: true })
+                                ]
+                            })
+                        ];
+
+                        if (itComment) {
+                            cellContents.push(
+                                new Paragraph({
+                                    indent: { left: 350 },
+                                    spacing: { after: 40 },
+                                    children: [
+                                        new TextRun({ text: "Observación: ", bold: true, size: 16, font: "Arial", color: "444444" }),
+                                        new TextRun({ text: itComment, size: 16, font: "Arial", color: "555555", italic: true })
+                                    ]
+                                })
+                            );
+                        }
+
+                        tableRows.push(new TableRow({
+                            children: [
+                                new TableCell({
+                                    width: { size: TABLE_WIDTH, type: WidthType.DXA },
+                                    verticalAlign: VerticalAlign.CENTER,
+                                    children: cellContents,
+                                    margins: { top: 60, bottom: 60, left: 100, right: 100 },
+                                    borders: {
+                                        bottom: { style: BorderStyle.SINGLE, size: 1, color: "E1E3E4" },
+                                        top: { style: BorderStyle.NIL },
+                                        left: { style: BorderStyle.NIL },
+                                        right: { style: BorderStyle.NIL }
+                                    }
+                                })
+                            ]
+                        }));
+                    });
+
+                    if (tableRows.length > 0) {
+                        children.push(new Table({
+                            width: { size: TABLE_WIDTH, type: WidthType.DXA },
+                            columnWidths: [TABLE_WIDTH],
+                            rows: tableRows,
+                            borders: {
+                                top: { style: BorderStyle.NIL }, bottom: { style: BorderStyle.NIL },
+                                left: { style: BorderStyle.NIL }, right: { style: BorderStyle.NIL },
+                                insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "E1E3E4" },
+                                insideVertical: { style: BorderStyle.NIL }
+                            }
+                        }));
+                    }
+                });
+
+                if (guidelines && guidelines.length > 10) {
+                    addSection("Notas del Asesor", guidelines);
+                }
+                if (criteria && criteria.length > 10) {
+                    addSection("Observaciones de Maquetación", criteria);
+                }
             }
 
             // --- 6. EVALUATION NEW QUIZ QUESTIONS PARSER ---
             if (type === 'evaluacion') {
                 const tempDiv = document.createElement('div');
-                if (actData.questionsHTML) tempDiv.innerHTML = actData.questionsHTML;
+                if (resData.questionsHTML) tempDiv.innerHTML = resData.questionsHTML;
                 const questionBlocks = tempDiv.querySelectorAll('.question-block');
                 if (questionBlocks.length > 0) {
                     addSection("Cuestionario de Evaluación", "A continuación se desarrolla el banco de preguntas.");
@@ -965,7 +1389,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Spacing immediately before the table
                 children.push(
                     new Paragraph({
-                        spacing: { before: 400, after: 100 },
+                        spacing: { before: 100, after: 50 },
                         children: [new TextRun({ text: "" })]
                     })
                 );
@@ -974,9 +1398,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 children.push(
                     new Table({
                         width: {
-                            size: 100,
-                            type: WidthType.PERCENTAGE,
+                            size: TABLE_WIDTH,
+                            type: WidthType.DXA,
                         },
+                        columnWidths: [TABLE_WIDTH],
                         borders: {
                             top: { style: BorderStyle.DOTTED, size: 8, color: "C7CDD1" },
                             bottom: { style: BorderStyle.DOTTED, size: 8, color: "C7CDD1" },
@@ -987,11 +1412,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             new TableRow({
                                 children: [
                                     new TableCell({
+                                        width: { size: TABLE_WIDTH, type: WidthType.DXA },
                                         margins: {
-                                            top: 250,
-                                            bottom: 250,
-                                            left: 350,
-                                            right: 300,
+                                            top: 200,
+                                            bottom: 200,
+                                            left: 250,
+                                            right: 250,
                                         },
                                         shading: {
                                             fill: "FFFFFF"
@@ -1009,7 +1435,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Create docx Object Structure
         const doc = new Document({
             creator: "Estandarizador Canvas LMS",
-            title: acts.length === 1 ? acts[0].title : "Actividades Compiladas",
+            title: resourcesArray.length === 1 ? resourcesArray[0].title : "Actividades Compiladas",
             description: "Actividades estandarizadas para Canvas",
             sections: [{ properties: {}, children: children }],
         });
@@ -1017,75 +1443,216 @@ document.addEventListener('DOMContentLoaded', () => {
         // Convert to BLOB and return
         return await Packer.toBlob(doc);
     }
+
+    async function downloadExcel(resData, filename) {
+        if (!window.ExcelJS) throw new Error('La librería ExcelJS no se ha cargado.');
+        const workbook = new window.ExcelJS.Workbook();
+        const sheetName = resData.type === 'planilla' ? "Mapa del Curso" : "Recurso";
+        const sheet = workbook.addWorksheet(sheetName);
+
+        const UCC_BLUE = 'FF0055A2';
+        const LIGHT_BLUE = 'FFE7F3FF';
+
+        if (resData.type === 'planilla') {
+            // Title Header
+            const titleRow = sheet.addRow(["PLANILLA DE MONTAJE - MAPA DEL CURSO"]);
+            sheet.mergeCells('A1:D1');
+            titleRow.getCell(1).font = { size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+            titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: UCC_BLUE } };
+            titleRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+            titleRow.height = 30;
+
+            sheet.addRow([]); // Spacer
+
+            // Metadata
+            const metaRows = [
+                ["Asignatura", resData.subjectName || "-"],
+                ["Carrera", resData.career || "-"],
+                ["Docente", resData.contentAuthor || "-"],
+                ["Drive", resData.driveLink || "-"]
+            ];
+
+            metaRows.forEach(row => {
+                const r = sheet.addRow(row);
+                r.getCell(1).font = { bold: true, color: { argb: 'FF333333' } };
+                r.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
+                r.getCell(1).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+                r.getCell(2).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+            });
+
+            sheet.addRow([]); // Spacer
+
+            // Table Header
+            const headRow = sheet.addRow(["MÓDULO / SECCIÓN", "ÍTEM", "TIPO", "OBSERVACIONES"]);
+            headRow.eachCell(cell => {
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: UCC_BLUE } };
+                cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            });
+            headRow.height = 25;
+
+            // Data
+            const tempFlow = document.createElement('div');
+            tempFlow.innerHTML = resData.mountingHTML || '';
+            const modules = tempFlow.querySelectorAll('.canvas-module');
+
+            modules.forEach(m => {
+                const modTitle = m.querySelector('.mod-title')?.value || 'Módulo';
+                const modRow = sheet.addRow([modTitle.toUpperCase(), "", "", ""]);
+                sheet.mergeCells(`A${modRow.number}:D${modRow.number}`);
+                modRow.getCell(1).font = { bold: true, color: { argb: 'FF0055A2' } };
+                modRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT_BLUE } };
+                modRow.getCell(1).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+                modRow.height = 20;
+
+                const items = m.querySelectorAll('.canvas-item');
+                items.forEach(it => {
+                    const itTitle = it.querySelector('.item-title')?.value || '-';
+                    const itTypeRaw = it.querySelector('.item-type-select')?.value || 'page';
+                    const itComment = it.querySelector('.item-comment')?.value || '';
+
+                    const typeMap = {
+                        'page': 'Página',
+                        'assignment': 'Tarea / Actividad',
+                        'quiz': 'Evaluación / Quiz',
+                        'discussion': 'Foro',
+                        'file': 'Archivo / Documento',
+                        'link': 'Enlace Externo'
+                    };
+                    const itType = typeMap[itTypeRaw] || itTypeRaw;
+
+                    const row = sheet.addRow(["", itTitle, itType, itComment]);
+                    row.eachCell(cell => {
+                        cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+                        cell.alignment = { vertical: 'middle', wrapText: true };
+                    });
+                });
+            });
+
+            sheet.getColumn(1).width = 25;
+            sheet.getColumn(2).width = 45;
+            sheet.getColumn(3).width = 15;
+            sheet.getColumn(4).width = 60;
+
+        } else {
+            // Tarea / Foro / Evaluacion
+            const titleRow = sheet.addRow(["DATOS DEL RECURSO"]);
+            sheet.mergeCells('A1:B1');
+            titleRow.getCell(1).font = { size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+            titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: UCC_BLUE } };
+            titleRow.height = 25;
+
+            const meta = [
+                ["Título", resData.title],
+                ["Tipo", resData.type],
+                ["Categoría", resData.category],
+                ["Módulo", resData.module],
+                ["Grupal", resData.isGroup ? "Sí" : "No"]
+            ];
+
+            meta.forEach(m => {
+                const r = sheet.addRow(m);
+                r.getCell(1).font = { bold: true };
+                r.getCell(1).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+                r.getCell(2).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+            });
+
+            sheet.addRow([]); // Spacer
+            const contHead = sheet.addRow(["CAMPO", "CONTENIDO (Texto Limpio)"]);
+            contHead.eachCell(c => {
+                c.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: UCC_BLUE } };
+                c.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+            });
+
+            const content = [
+                ["Consigna", stripHtml(resData.consigna)],
+                ["Objetivos", stripHtml(resData.objectives)],
+                ["Pautas 1", stripHtml(resData.guidelines)],
+                ["Pautas 2", stripHtml(resData.criteria)]
+            ];
+
+            content.forEach(c => {
+                const r = sheet.addRow(c);
+                r.getCell(1).font = { bold: true };
+                r.getCell(2).alignment = { wrapText: true, vertical: 'top' };
+                r.eachCell(cell => cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } });
+            });
+
+            sheet.getColumn(1).width = 25;
+            sheet.getColumn(2).width = 90;
+        }
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        window.saveAs(blob, `${filename}.xlsx`);
+    }
+
+    function stripHtml(html) {
+        if (!html) return "";
+        const tmp = document.createElement("DIV");
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || "";
+    }
+
     function parseHTMLToDocx(html) {
         if (!html) return [];
 
-        const { Paragraph, TextRun } = window.docx;
+        const { Paragraph, TextRun, ImageRun } = window.docx;
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
 
         const results = [];
 
-        function processNode(node, currentRuns = []) {
+        function processNode(node, currentRuns = [], inheritedFormatting = {}) {
             if (node.nodeType === 3) { // Text node
                 if (node.textContent.trim() || node.textContent === ' ') {
                     currentRuns.push(new TextRun({
                         text: node.textContent,
-                        size: 24,
-                        font: "Arial"
+                        size: 22, // 11pt
+                        font: "Arial",
+                        ...inheritedFormatting
                     }));
                 }
             } else if (node.nodeType === 1) { // Element node
                 const tagName = node.tagName.toLowerCase();
+                const newFormatting = { ...inheritedFormatting };
+
+                if (['strong', 'b'].includes(tagName)) newFormatting.bold = true;
+                if (['em', 'i'].includes(tagName)) newFormatting.italic = true;
+                if (tagName === 'u') newFormatting.underline = {};
 
                 if (['p', 'div', 'li'].includes(tagName)) {
                     const childRuns = [];
-                    node.childNodes.forEach(child => processNode(child, childRuns));
+                    node.childNodes.forEach(child => processNode(child, childRuns, newFormatting));
 
                     if (childRuns.length > 0) {
                         const paraOptions = {
                             children: childRuns,
-                            spacing: { after: 120 }
+                            spacing: { after: 80 }
                         };
-
-                        // Handle bullets/numbers
-                        if (tagName === 'li') {
-                            paraOptions.bullet = { level: 0 };
-                        }
-
+                        if (tagName === 'li') paraOptions.bullet = { level: 0 };
                         results.push(new Paragraph(paraOptions));
                     }
-                } else if (['strong', 'b'].includes(tagName)) {
-                    const nestedRuns = [];
-                    node.childNodes.forEach(child => processNode(child, nestedRuns));
-                    nestedRuns.forEach(run => {
-                        if (run instanceof TextRun) {
-                            run.options.bold = true;
-                        }
-                    });
-                    currentRuns.push(...nestedRuns);
-                } else if (['em', 'i'].includes(tagName)) {
-                    const nestedRuns = [];
-                    node.childNodes.forEach(child => processNode(child, nestedRuns));
-                    nestedRuns.forEach(run => {
-                        if (run instanceof TextRun) {
-                            run.options.italic = true;
-                        }
-                    });
-                    currentRuns.push(...nestedRuns);
-                } else if (tagName === 'u') {
-                    const nestedRuns = [];
-                    node.childNodes.forEach(child => processNode(child, nestedRuns));
-                    nestedRuns.forEach(run => {
-                        if (run instanceof TextRun) {
-                            run.options.underline = {};
-                        }
-                    });
-                    currentRuns.push(...nestedRuns);
                 } else if (tagName === 'br') {
                     currentRuns.push(new TextRun({ break: 1 }));
+                } else if (tagName === 'img') {
+                    const src = node.getAttribute('src');
+                    if (src && src.startsWith('data:image')) {
+                        const base64Data = src.split(',')[1];
+                        try {
+                            const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+                            currentRuns.push(new ImageRun({
+                                data: binaryData,
+                                transformation: { width: 550, height: 350 },
+                            }));
+                        } catch (err) {
+                            console.error("Error processing image for docx:", err);
+                        }
+                    }
                 } else {
-                    node.childNodes.forEach(child => processNode(child, currentRuns));
+                    node.childNodes.forEach(child => processNode(child, currentRuns, newFormatting));
                 }
             }
         }
@@ -1108,7 +1675,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (strayRuns.length > 0) {
                     results.push(new Paragraph({
                         children: strayRuns,
-                        spacing: { after: 120 }
+                        spacing: { after: 80 }
                     }));
                 }
             }
@@ -1116,4 +1683,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return results;
     }
+
+    renderResourcesList();
 });
